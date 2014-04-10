@@ -49,6 +49,7 @@ import System.Posix.IO
 import Control.Applicative
 #endif
 import Data.Maybe
+import Data.Monoid
 
 import Utility.Misc
 import Utility.Exception
@@ -353,8 +354,12 @@ startInteractiveProcess cmd args environ = do
 	(Just from, Just to, _, pid) <- createProcess p
 	return (pid, to, from)
 
-{- Wrapper around System.Process function that does debug logging. -}
+{- Wrapper around System.Process function that does debug logging and sets
+ - LC_ALL=C to make sure locale settings do not affect the output of a process
+ - we may be parsing. -}
 createProcess :: CreateProcess -> IO (Maybe Handle, Maybe Handle, Maybe Handle, ProcessHandle)
 createProcess p = do
-	debugProcess p
-	System.Process.createProcess p
+	debugProcess p'
+	System.Process.createProcess p'
+  where
+	p' = p { env = Just [("LC_ALL", "C")] <> env p }
